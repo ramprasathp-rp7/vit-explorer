@@ -1,0 +1,96 @@
+/* ─── Design tokens ─────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0a0b0f;
+  --bg-1:      #111318;
+  --bg-2:      #181b22;
+  --bg-3:      #1e2229;
+  --border:    #2a2e38;
+  --border-hi: #3d4251;
+  --text:      #e8eaf0;
+  --text-2:    #9aa0b4;
+  --text-3:    #5c6278;
+  --accent:    #5b8cff;
+  --accent-2:  #7b5ea7;
+  --ok:        #3ecf8e;
+  --warn:      #f59e0b;
+  --danger:    #ef4444;
+
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+
+  --radius:    6px;
+  --radius-lg: 12px;
+  --shadow:    0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 15px; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(91,140,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91,140,255,0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-1); }
+::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+/* ─── Utility ────────────────────────────────────────────────────────────── */
+.mono { font-family: var(--font-mono); }
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tag-blue  { background: rgba(91,140,255,0.15); color: var(--accent); border: 1px solid rgba(91,140,255,0.3); }
+.tag-green { background: rgba(62,207,142,0.12); color: var(--ok);     border: 1px solid rgba(62,207,142,0.3); }
+.tag-purple{ background: rgba(123,94,167,0.2);  color: #b08cf5;       border: 1px solid rgba(123,94,167,0.4); }
+.tag-dim   { background: rgba(255,255,255,0.04); color: var(--text-2); border: 1px solid var(--border); }
+
+/* ─── Animation keyframes ───────────────────────────────────────────────── */
+@keyframes fadeIn   { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes shimmer  {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.animate-in  { animation: fadeIn 0.35s ease both; }
+.animate-spin { animation: spin 1s linear infinite; }
+
+/* ─── Skeleton loading ──────────────────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--radius);
+}

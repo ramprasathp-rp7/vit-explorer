@@ -1,0 +1,313 @@
+/* BenchmarkPanel.module.css */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Disclaimer ────────────────────────────────────────────────────────────── */
+.disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  color: var(--warn);
+  line-height: 1.4;
+}
+.disclaimerIcon { flex-shrink: 0; font-size: 0.9rem; }
+
+/* ── Section ───────────────────────────────────────────────────────────────── */
+.section { display: flex; flex-direction: column; gap: 12px; }
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sectionTitle {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+}
+.sectionActions { display: flex; align-items: center; gap: 6px; }
+
+.linkBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font-mono);
+}
+.linkBtn:hover { text-decoration: underline; }
+.sep { color: var(--text-3); font-size: 0.75rem; }
+
+/* ── Model list ────────────────────────────────────────────────────────────── */
+.modelList { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.modelItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  user-select: none;
+}
+.modelItem:hover { border-color: var(--border-hi); background: var(--bg-3); }
+.modelItemChecked {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(91, 140, 255, 0.07);
+}
+.modelItemActive {
+  border-color: var(--accent) !important;
+  background: rgba(91, 140, 255, 0.12) !important;
+}
+
+.checkbox { accent-color: var(--accent); width: 13px; height: 13px; flex-shrink: 0; }
+.modelName { font-family: var(--font-mono); font-size: 0.78rem; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.badgeOk  { background: rgba(62, 207, 142, 0.15); color: var(--ok); }
+.badgeErr { background: rgba(239, 68, 68, 0.15);  color: var(--danger); }
+
+.spinner {
+  width: 13px; height: 13px;
+  border: 2px solid var(--border-hi);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Run row ───────────────────────────────────────────────────────────────── */
+.runRow { display: flex; align-items: center; gap: 14px; }
+
+.runBtn {
+  padding: 9px 22px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.83rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s;
+}
+.runBtn:hover:not(:disabled) { opacity: 0.85; }
+.runBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.stopBtn {
+  padding: 9px 22px;
+  background: var(--bg-3);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  font-size: 0.83rem;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.stopBtn:hover { background: rgba(239, 68, 68, 0.1); }
+
+.doneLabel { font-size: 0.78rem; color: var(--ok); font-family: var(--font-mono); }
+
+/* ── Overall progress ──────────────────────────────────────────────────────── */
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.progressHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.progressModel { font-size: 0.82rem; color: var(--text); font-family: var(--font-mono); }
+.progressFraction { font-size: 0.72rem; color: var(--text-3); font-family: var(--font-mono); }
+
+.progressBar { height: 4px; background: var(--bg-3); border-radius: 2px; overflow: hidden; }
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+
+/* ── Sub-progress (per-phase detail) ──────────────────────────────────────── */
+.subProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.subProgressHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.subPhase {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.subMsg {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subCount { font-size: 0.7rem; color: var(--text-3); font-family: var(--font-mono); white-space: nowrap; }
+
+.subBar { height: 2px; background: var(--bg-3); border-radius: 1px; overflow: hidden; }
+.subFill {
+  height: 100%;
+  background: rgba(91, 140, 255, 0.5);
+  transition: width 0.2s ease;
+  border-radius: 1px;
+}
+
+/* ── Errors ────────────────────────────────────────────────────────────────── */
+.errorRow {
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+  color: var(--danger);
+  font-family: var(--font-mono);
+}
+
+/* ── Results table ─────────────────────────────────────────────────────────── */
+.tableWrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.table thead { background: var(--bg-2); border-bottom: 1px solid var(--border); }
+.table th {
+  padding: 9px 14px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  white-space: nowrap;
+  font-weight: 400;
+}
+.table th.thName { text-align: left; }
+
+.table td {
+  padding: 9px 14px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-2);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.79rem;
+}
+.table td.tdName {
+  text-align: left;
+  color: var(--text);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr:hover td { background: var(--bg-2); }
+.baselineRow td { color: var(--text); }
+.baselineRow td.tdName { font-weight: 600; }
+
+.baselinePill {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: rgba(91, 140, 255, 0.12);
+  border: 1px solid rgba(91, 140, 255, 0.25);
+  border-radius: 3px;
+  font-size: 0.63rem;
+  color: var(--accent);
+  vertical-align: middle;
+}
+
+.good    { color: var(--ok); }
+.warn    { color: var(--warn); }
+.neutral { color: var(--text-3); }
+.noData  { color: var(--text-3); cursor: help; border-bottom: 1px dashed var(--text-3); }
+
+.tableNote {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* ── Empty / error states ──────────────────────────────────────────────────── */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 32px;
+  text-align: center;
+}
+.emptyTitle { font-size: 0.95rem; color: var(--text-2); }
+.emptyHint  { font-size: 0.78rem; color: var(--text-3); line-height: 1.6; }
+.emptyHint code {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.errorBanner {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  color: var(--danger);
+  font-family: var(--font-mono);
+}

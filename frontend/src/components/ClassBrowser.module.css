@@ -1,0 +1,212 @@
+/* src/components/ClassBrowser.module.css */
+
+.wrapper {
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px 12px;
+  flex-shrink: 0;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  min-height: 26px;
+}
+
+.label {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.activeName {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.count {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  margin-left: 2px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.backBtn:hover { background: var(--bg-3); color: var(--text); border-color: var(--border-hi); }
+
+.scrollBtns {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.scrollBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scrollBtn:hover { background: var(--bg-3); color: var(--text); }
+
+/* ── Class grid ──────────────────────────────────────────────────────────── */
+.classGrid {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.classGrid::-webkit-scrollbar { display: none; }
+
+.classCard {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 110px;
+  padding: 9px 10px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+
+.classCard:hover {
+  background: var(--bg-3);
+  border-color: var(--cls-color, var(--border-hi));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.classColorBar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--cls-color, var(--accent));
+  border-radius: 2px 2px 0 0;
+}
+
+.className {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+.classId {
+  font-size: 0.62rem;
+  font-family: var(--font-mono);
+  color: var(--text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* ── Image strip ─────────────────────────────────────────────────────────── */
+.strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar { display: none; }
+
+/* ── Thumbnail ────────────────────────────────────────────────────────────── */
+.thumb {
+  flex-shrink: 0;
+  width: 80px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  scroll-snap-align: start;
+  position: relative;
+  border-radius: var(--radius);
+}
+
+.thumbImg {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  display: block;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.thumb:hover .thumbImg {
+  border-color: var(--border-hi);
+  transform: scale(1.04);
+}
+
+.thumbSelected .thumbImg {
+  border-color: var(--sel-color, var(--accent));
+}
+
+.selectedRing {
+  position: absolute;
+  inset: -3px -3px 0;
+  border-radius: calc(var(--radius) + 1px);
+  border: 2px solid;
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Split badges */
+.splitBadge {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  font-size: 0.55rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.splitTrain {
+  background: rgba(91, 140, 255, 0.75);
+  color: #fff;
+}
+
+.splitVal {
+  background: rgba(62, 207, 142, 0.75);
+  color: #000;
+}

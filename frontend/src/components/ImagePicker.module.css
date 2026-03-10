@@ -1,0 +1,118 @@
+/* src/components/ImagePicker.module.css */
+
+.wrapper {
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px 12px;
+  flex-shrink: 0;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.label {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.count {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.scrollBtns {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.scrollBtn {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.scrollBtn:hover { background: var(--bg-3); color: var(--text); }
+
+/* ── Scrolling strip ─────────────────────────────────────────────────────── */
+.strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+
+  /* Hide scrollbar */
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar { display: none; }
+
+/* ── Individual thumbnail ─────────────────────────────────────────────────── */
+.thumb {
+  flex-shrink: 0;
+  width: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  scroll-snap-align: start;
+  position: relative;
+}
+
+.thumbImg {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.thumb:hover .thumbImg {
+  border-color: var(--border-hi);
+  transform: scale(1.03);
+}
+
+.thumbSelected .thumbImg {
+  border-color: var(--accent);
+}
+
+.selectedRing {
+  position: absolute;
+  inset: -3px -3px 15px;
+  border-radius: calc(var(--radius) + 1px);
+  border: 2px solid var(--accent);
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
+.thumbName {
+  font-size: 0.6rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 72px;
+}
+
+.thumbSelected .thumbName {
+  color: var(--accent);
+}
