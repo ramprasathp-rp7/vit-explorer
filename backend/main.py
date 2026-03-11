@@ -172,6 +172,7 @@ def build_image_index() -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 _processor = None
+_base_model = None             # base ViT architecture loaded once, cloned per model
 _model_cache = {}
 _pil_cache = {}
 _baseline_bench_model = None   # cached baseline for benchmarking (loaded once)
@@ -187,6 +188,24 @@ def get_processor():
     return _processor
 
 
+def _get_base_model() -> ViTForImageClassification:
+    """Load the base ViT architecture once and cache it. All rollout models share
+    the same architecture so we clone this instead of calling from_pretrained
+    repeatedly — cuts first-load time for each new model from ~90s to ~2s."""
+    global _base_model
+    if _base_model is None:
+        log.info(f"Loading base ViT architecture from {MODEL_HF_NAME} (once)...")
+        _base_model = ViTForImageClassification.from_pretrained(
+            MODEL_HF_NAME,
+            num_labels=NUM_LABELS,
+            ignore_mismatched_sizes=True,
+            output_attentions=True,
+            attn_implementation="eager",
+        )
+        log.info("Base architecture cached.")
+    return _base_model
+
+
 def get_model(stem: str):
     if stem in _model_cache:
         return _model_cache[stem]
@@ -196,13 +215,8 @@ def get_model(stem: str):
         raise FileNotFoundError(f"Model file not found: {path}")
 
     log.info(f"Loading model: {stem}")
-    model = ViTForImageClassification.from_pretrained(
-        MODEL_HF_NAME,
-        num_labels=NUM_LABELS,
-        ignore_mismatched_sizes=True,
-        output_attentions=True,
-        attn_implementation="eager",
-    )
+    import copy
+    model = copy.deepcopy(_get_base_model())   # clone shared base — fast (~1-2s)
     state_dict = torch.load(str(path), map_location="cpu")
     model.load_state_dict(state_dict, strict=False)
     model.eval()
