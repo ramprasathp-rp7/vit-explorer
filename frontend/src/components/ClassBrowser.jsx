@@ -2,7 +2,7 @@
 // Two-level image picker: class grid → image strip
 
 import { useState, useEffect, useRef } from 'react'
-import { fetchClassImages } from '../api.js'
+import { fetchClassImages, STATIC_ROOT } from '../api.js'
 import { ChevronLeft, ChevronRight, ArrowLeft, Layers } from 'lucide-react'
 import styles from './ClassBrowser.module.css'
 
@@ -102,7 +102,7 @@ export default function ClassBrowser({ classes, selectedImage, onSelect }) {
                   title={img.filename}
                 >
                   <img
-                    src={img.url}
+                    src={`${STATIC_ROOT}${img.url}`}
                     alt={img.filename}
                     loading="lazy"
                     className={styles.thumbImg}
