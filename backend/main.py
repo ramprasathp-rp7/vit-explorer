@@ -174,6 +174,7 @@ def build_image_index() -> dict:
 _processor = None
 _model_cache = {}
 _pil_cache = {}
+_baseline_bench_model = None   # cached baseline for benchmarking (loaded once)
 
 log.info(f"Using device: {DEVICE}")
 
@@ -393,9 +394,15 @@ def list_compacted_models():
 
 
 def _load_baseline_for_benchmark() -> ViTForImageClassification:
+    global _baseline_bench_model
+    if _baseline_bench_model is not None:
+        log.info("Baseline benchmark model served from cache")
+        return _baseline_bench_model
+
     path = MODELS_DIR / BASELINE_MODEL_ID
     if not path.exists():
         raise FileNotFoundError(f"Baseline model not found: {path}")
+    log.info("Loading baseline model for benchmark (first run — will be cached)...")
     model = ViTForImageClassification.from_pretrained(
         MODEL_HF_NAME,
         num_labels=NUM_LABELS,
@@ -407,7 +414,8 @@ def _load_baseline_for_benchmark() -> ViTForImageClassification:
     model.load_state_dict(state_dict, strict=False)
     model.eval()
     model.to(DEVICE)
-    return model
+    _baseline_bench_model = model
+    return _baseline_bench_model
 
 
 def _sse(data: dict) -> str:
@@ -431,9 +439,11 @@ def _run_benchmark_thread(ids: list, q: queue.Queue):
         q.put({"type": "progress", "step": "baseline",
                "model_id": BASELINE_MODEL_ID, "index": 0})
         try:
+            q.put({"type": "tick", "phase": "loading", "current": 0, "total": 1,
+                   "msg": "Loading baseline model (first run takes 1–2 min, cached after)…"})
             baseline_model = _load_baseline_for_benchmark()
             q.put({"type": "tick", "phase": "loading", "current": 1, "total": 1,
-                   "msg": "Baseline model loaded, starting benchmark…"})
+                   "msg": "Baseline model loaded ✓"})
             baseline_result = benchmark_model(
                 model=baseline_model,
                 model_name="Baseline",
@@ -443,7 +453,7 @@ def _run_benchmark_thread(ids: list, q: queue.Queue):
                 baseline_params=BASELINE_PARAM_COUNT,
                 cb=cb,
             )
-            del baseline_model
+            # Don't del baseline_model — it's cached in _baseline_bench_model for reuse
             if DEVICE == "cuda":
                 torch.cuda.empty_cache()
 

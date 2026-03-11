@@ -9,9 +9,12 @@ Protocol:
                power-sampling fallback otherwise.
 """
 
+import os
 import time
 import gc
 import logging
+import platform
+import ctypes
 import numpy as np
 import torch
 import torch.nn as nn
@@ -21,6 +24,45 @@ log = logging.getLogger(__name__)
 
 try:
     import pynvml
+
+    # ── Windows DLL path fix ──────────────────────────────────────────────────
+    # pynvml hardcodes C:\Program Files\NVIDIA Corporation\NVSMI\nvml.dll
+    # but on modern drivers (R525+) the DLL lives in C:\Windows\System32\.
+    # We monkey-patch _LoadNvmlLibrary to try System32 as a fallback.
+    if platform.system() == "Windows":
+        # pynvml catches OSError from CDLL() and re-raises as NVMLError_LibraryNotFound.
+        # We intercept _LoadNvmlLibrary to try System32 when NVSMI path fails.
+        # Catch (OSError, Exception) broadly because different pynvml versions
+        # may or may not wrap the OSError before we see it.
+        _pynvml_original_load = pynvml._LoadNvmlLibrary
+
+        def _pynvml_patched_load():
+            try:
+                _pynvml_original_load()
+            except Exception:  # catches OSError, NVMLError, and subclasses
+                _candidates = [
+                    os.path.join(os.environ.get("SystemRoot", "C:\\Windows"),
+                                 "System32", "nvml.dll"),
+                    os.path.join(os.environ.get("ProgramW6432",
+                                 "C:\\Program Files"),
+                                 "NVIDIA Corporation", "GLS", "nvml.dll"),
+                ]
+                loaded = False
+                for _path in _candidates:
+                    if os.path.exists(_path):
+                        try:
+                            pynvml.nvmlLib = ctypes.CDLL(_path)
+                            log.info(f"pynvml: loaded nvml.dll from {_path}")
+                            loaded = True
+                            break
+                        except OSError:
+                            continue
+                if not loaded:
+                    raise
+
+        pynvml._LoadNvmlLibrary = _pynvml_patched_load
+    # ─────────────────────────────────────────────────────────────────────────
+
     NVML_AVAILABLE = True
 except ImportError:
     NVML_AVAILABLE = False
@@ -30,9 +72,37 @@ except ImportError:
 
 BASELINE_PARAM_COUNT = 85_806_346
 
-DEMO_WARMUP     = 10
-DEMO_ITERATIONS = 50
-DEMO_BATCH_SIZE = 32
+# ── Latency knobs ─────────────────────────────────────────────────────────────
+# DEMO_WARMUP: discarded iterations before timing starts. More = better JIT
+#   stability. 10 is usually enough; try 20-50 if std is high.
+# DEMO_ITERATIONS: timed iterations. More = lower std. 50 is fast; 200 = stable.
+# DEMO_BATCH_SIZE: images per forward pass. Larger = better GPU utilisation
+#   but must fit in VRAM. 32 is safe; 64 or 128 also fine for 5070 Ti.
+DEMO_WARMUP          = 10
+DEMO_ITERATIONS      = 50
+DEMO_BATCH_SIZE      = 32
+
+# ── Energy knobs ───────────────────────────────────────────────────────────────
+# ENERGY_WARMUP: same role as latency warmup but also lets GPU reach thermal
+#   steady-state. Increase to 20-50 if your GPU temperature is still rising
+#   when measurement starts (check with GPU-Z).
+# ENERGY_ITERATIONS: the main lever for reducing std/mean (CoV).
+#   The hw counter updates every ~10-50ms. If your batch takes 60ms, you get
+#   one clean reading per iteration. If it takes 15ms, readings may repeat.
+#   More iterations average out the quantisation noise.
+#   200 = current. Try 300-500 for publication quality (adds ~30-90s).
+# ENERGY_BATCH_SIZE: larger = longer inference = counter accumulates more
+#   charge per reading = less quantisation noise. But must fit in VRAM and
+#   the energy-per-sample computation scales correctly regardless of batch size.
+#   64 = current. Try 128 if VRAM allows.
+# BACKGROUND_SAMPLES / BACKGROUND_INTERVAL_S: how the idle power baseline is
+#   measured. More samples and longer interval = more stable baseline.
+#   Currently 20 samples × 0.05s = 1s total. Try 40 × 0.1s = 4s for stability.
+ENERGY_WARMUP            = 10
+ENERGY_ITERATIONS        = 200
+ENERGY_BATCH_SIZE        = 64
+BACKGROUND_SAMPLES       = 20    # samples for idle power baseline
+BACKGROUND_INTERVAL_S    = 0.05  # seconds between each background sample
 
 # Progress callback type:  cb(phase, current, total, message)
 ProgressCB = Optional[Callable[[str, int, int, str], None]]
@@ -49,8 +119,7 @@ def _make_dummy_batch(batch_size: int, device: str) -> torch.Tensor:
 def _cuda_init(model: nn.Module, device: str):
     """
     Single throwaway forward pass (batch=1) to trigger CUDA JIT / cuDNN
-    autotuning before any timed measurement.  Prevents the first warmup
-    iteration from absorbing the full CUDA init cost (~seconds).
+    autotuning before any timed measurement.
     """
     if device != 'cuda':
         return
@@ -77,6 +146,10 @@ def _check_nvml_energy_counter():
     """Returns (supported: bool, reason: str). Fully self-contained NVML init/shutdown."""
     if not NVML_AVAILABLE:
         return False, 'pynvml not installed (pip install nvidia-ml-py3)'
+    # Guard against old pynvml versions that lack the energy counter function.
+    if not hasattr(pynvml, 'nvmlDeviceGetTotalEnergyConsumption'):
+        return False, ('nvmlDeviceGetTotalEnergyConsumption not in this pynvml version — '
+                       'run: pip install nvidia-ml-py3 --upgrade')
     try:
         pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(0)
@@ -169,9 +242,9 @@ def _get_background_power(handle, n_samples: int = 20, interval_s: float = 0.05)
 def measure_energy(
     model: nn.Module,
     device: str,
-    num_warmup: int = DEMO_WARMUP,
-    num_iterations: int = DEMO_ITERATIONS,
-    batch_size: int = DEMO_BATCH_SIZE,
+    num_warmup: int = ENERGY_WARMUP,
+    num_iterations: int = ENERGY_ITERATIONS,
+    batch_size: int = ENERGY_BATCH_SIZE,
     cb: ProgressCB = None,
 ) -> Dict[str, Any]:
     empty = {
@@ -196,12 +269,22 @@ def measure_energy(
     hw_supported, hw_reason = _check_nvml_energy_counter()
     log.info(f'NVML check: {hw_reason}')
 
+    # If NVML library itself failed to load, return gracefully
+    if not hw_supported and 'init failed' in hw_reason.lower():
+        empty['method'] = 'unavailable'
+        empty['nvml_reason'] = hw_reason
+        if cb:
+            cb('energy', 1, 1, f'Energy skipped — {hw_reason}')
+        return empty
+
     if cb:
         cb('energy_init', 0, 1, 'Measuring background power…')
 
     pynvml.nvmlInit()
     handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-    background_power_w = _get_background_power(handle)
+    background_power_w = _get_background_power(handle,
+                                                   n_samples=BACKGROUND_SAMPLES,
+                                                   interval_s=BACKGROUND_INTERVAL_S)
 
     if cb:
         cb('energy_init', 1, 1, f'Background power: {background_power_w:.1f} W')
