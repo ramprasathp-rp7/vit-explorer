@@ -1,7 +1,7 @@
 // src/components/ClassBrowser.jsx
 // Two-level image picker: class grid → image strip
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { fetchClassImages, STATIC_ROOT } from '../api.js'
 import { ChevronLeft, ChevronRight, ArrowLeft, Layers } from 'lucide-react'
 import styles from './ClassBrowser.module.css'
@@ -12,13 +12,59 @@ const CLASS_COLORS = [
   '#38bdf8','#fb923c','#a3e635','#f472b6','#34d399',
 ]
 
+// ── Fetch-based image component ───────────────────────────────────────────────
+// <img> tags can't send custom headers, so ngrok's interstitial blocks them
+// (ERR_BLOCKED_BY_ORB). Instead we fetch the image via JS (which can set
+// headers), create a blob URL, and hand that to the <img> tag.
+// Falls back gracefully if fetch fails.
+function AuthImg({ src, alt, className }) {
+  const [blobUrl, setBlobUrl] = useState(null)
+  const [failed,  setFailed]  = useState(false)
+  const prevUrl = useRef(null)
+
+  useEffect(() => {
+    if (!src) return
+
+    // Revoke previous blob to avoid memory leaks
+    if (prevUrl.current) URL.revokeObjectURL(prevUrl.current)
+
+    let cancelled = false
+    fetch(src, { headers: { 'ngrok-skip-browser-warning': '1' } })
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.blob()
+      })
+      .then(blob => {
+        if (cancelled) return
+        const url = URL.createObjectURL(blob)
+        prevUrl.current = url
+        setBlobUrl(url)
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true)
+      })
+
+    return () => { cancelled = true }
+  }, [src])
+
+  // Revoke on unmount
+  useEffect(() => {
+    return () => { if (prevUrl.current) URL.revokeObjectURL(prevUrl.current) }
+  }, [])
+
+  if (failed) return <div className={className} style={{ background: 'var(--bg-3)' }} />
+  if (!blobUrl) return <div className={`${className} skeleton`} />
+  return <img src={blobUrl} alt={alt} className={className} />
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ClassBrowser({ classes, selectedImage, onSelect }) {
-  const [activeClass, setActiveClass] = useState(null)   // {id, name} or null
+  const [activeClass, setActiveClass] = useState(null)
   const [images, setImages]           = useState([])
   const [loading, setLoading]         = useState(false)
   const scrollRef = useRef(null)
 
-  // Load images when a class is chosen
   useEffect(() => {
     if (!activeClass) return
     setLoading(true)
@@ -60,7 +106,7 @@ export default function ClassBrowser({ classes, selectedImage, onSelect }) {
     )
   }
 
-  // ── Image strip view (inside a class) ──────────────────────────────────────
+  // ── Image strip view ───────────────────────────────────────────────────────
   const colorIdx = classes.findIndex(c => c.id === activeClass.id)
   const color = CLASS_COLORS[colorIdx % CLASS_COLORS.length]
 
@@ -101,10 +147,9 @@ export default function ClassBrowser({ classes, selectedImage, onSelect }) {
                   onClick={() => onSelect(img.id)}
                   title={img.filename}
                 >
-                  <img
+                  <AuthImg
                     src={`${STATIC_ROOT}${img.url}`}
                     alt={img.filename}
-                    loading="lazy"
                     className={styles.thumbImg}
                   />
                   <span className={`${styles.splitBadge} ${img.split === 'val' ? styles.splitVal : styles.splitTrain}`}>
